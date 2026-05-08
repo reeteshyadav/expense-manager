@@ -1,0 +1,18 @@
+{
+  "name": "Expenses",
+  "short_name": "Expenses",
+  "description": "Client-side expense tracker with local backups.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f0f11",
+  "theme_color": "#0f0f11",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

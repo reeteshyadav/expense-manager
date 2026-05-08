@@ -1,581 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Expenses"/>
-<title>Expenses</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-
-  :root {
-    --bg: #0f0f11;
-    --surface: #1a1a1f;
-    --surface2: #242429;
-    --border: #2e2e35;
-    --accent: #7c6aff;
-    --accent2: #ff6a6a;
-    --accent3: #6affb8;
-    --text: #f0f0f5;
-    --muted: #8888a0;
-    --food: #ff9f6a;
-    --transport: #6ab8ff;
-    --health: #b86aff;
-    --shopping: #ff6a9f;
-    --entertainment: #ffda6a;
-    --bills: #6affda;
-    --other: #a0a0b8;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
-
-  .nav { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
-  .nav-btn { flex: 1; padding: 14px 8px 12px; background: none; border: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: color 0.2s; border-bottom: 2px solid transparent; }
-  .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .nav-icon { font-size: 19px; }
-
-  .page { display: none; padding: 16px; padding-bottom: 32px; }
-  .page.active { display: block; }
-  .page-title { font-size: 22px; font-weight: 600; margin-bottom: 20px; letter-spacing: -0.5px; }
-
-  .form-group { margin-bottom: 14px; }
-  label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
-  input, textarea, select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
-  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
-  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
-  textarea { resize: none; height: 80px; }
-
-  /* Category grid */
-  .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .cat-btn {
-    padding: 12px 6px 10px; border-radius: 12px; border: 1.5px solid var(--border);
-    background: var(--surface2); color: var(--muted); font-family: 'DM Sans', sans-serif;
-    font-size: 11px; font-weight: 500; cursor: pointer; text-align: center;
-    transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 6px;
-  }
-  .cat-icon { font-size: 22px; line-height: 1; }
-  .cat-btn.selected { background: var(--surface); border-color: var(--accent); color: var(--text); }
-  .cat-btn.full-row { grid-column: 1 / -1; flex-direction: row; justify-content: center; gap: 10px; padding: 12px; }
-
-  .amount-wrap { position: relative; }
-  .amount-wrap .currency { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 15px; pointer-events: none; }
-  .amount-wrap input { padding-left: 28px; font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; }
-
-  .required-badge { font-size: 10px; background: var(--accent2); color: #fff; padding: 2px 7px; border-radius: 8px; margin-left: 6px; font-weight: 600; letter-spacing: 0.3px; vertical-align: middle; display: none; }
-  .required-badge.show { display: inline; }
-
-  .btn-submit { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: 12px; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: opacity 0.2s, transform 0.1s; letter-spacing: -0.3px; }
-  .btn-submit:active { opacity: 0.85; transform: scale(0.99); }
-
-  .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--accent3); color: #0f1a13; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .toast.error { background: var(--accent2); color: #fff; }
-
-  /* Report */
-  .month-selector { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; background: var(--surface); border-radius: 12px; padding: 4px; }
-  .month-nav { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 8px 14px; border-radius: 8px; transition: background 0.15s; }
-  .month-nav:active { background: var(--surface2); }
-  .month-label { font-size: 15px; font-weight: 600; }
-  .summary-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-  .summary-card { background: var(--surface); border-radius: 12px; padding: 14px; border: 1px solid var(--border); }
-  .summary-card.full { grid-column: 1 / -1; }
-  .s-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
-  .s-value { font-size: 22px; font-weight: 600; font-family: 'DM Mono', monospace; letter-spacing: -1px; }
-  .section-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; margin-top: 20px; }
-  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
-  .bar-row { display: flex; align-items: center; gap: 10px; }
-  .bar-label { font-size: 12px; color: var(--muted); width: 92px; flex-shrink: 0; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
-  .bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
-  .bar-amount { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); width: 64px; text-align: right; }
-
-  /* Expense items */
-  .expense-list { display: flex; flex-direction: column; gap: 8px; }
-  .expense-item { background: var(--surface); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); }
-  .exp-icon { font-size: 20px; flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; background: var(--surface2); display: flex; align-items: center; justify-content: center; }
-  .expense-info { flex: 1; min-width: 0; }
-  .expense-cat { font-size: 11px; color: var(--muted); font-weight: 500; }
-  .expense-desc { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .expense-right { text-align: right; flex-shrink: 0; }
-  .expense-amount { font-size: 15px; font-family: 'DM Mono', monospace; font-weight: 500; }
-  .expense-date { font-size: 11px; color: var(--muted); }
-  .expense-delete { background: none; border: none; color: var(--muted); font-size: 15px; cursor: pointer; padding: 4px; border-radius: 6px; transition: color 0.15s; }
-  .expense-delete:active { color: var(--accent2); }
-  .empty { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 14px; }
-
-  /* Records filters */
-  .filter-row { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
-  .filter-chip { flex-shrink: 0; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
-  .filter-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-  /* Export / Backup */
-  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-  .stat-box { background: var(--surface); border-radius: 12px; padding: 14px; border: 1px solid var(--border); text-align: center; }
-  .stat-box .s-num { font-size: 24px; font-weight: 600; font-family: 'DM Mono', monospace; letter-spacing: -1px; }
-  .stat-box .s-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; margin-top: 2px; }
-
-  .action-btn { width: 100%; padding: 15px 16px; background: var(--surface2); border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background 0.2s; margin-bottom: 10px; border: 1.5px solid var(--border); color: var(--text); }
-  .action-btn:active { background: var(--surface); }
-  .action-btn .btn-icon { font-size: 20px; }
-  .action-btn .btn-text { flex: 1; text-align: left; }
-  .action-btn .btn-sub { font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 1px; }
-  .action-btn.green { border-color: var(--accent3); color: var(--accent3); }
-  .action-btn.purple { border-color: var(--accent); color: var(--accent); }
-  .action-btn.red { border-color: var(--accent2); color: var(--accent2); }
-
-  .backup-info { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 16px; }
-  .backup-info p { font-size: 13px; color: var(--muted); line-height: 1.6; }
-  .backup-info strong { color: var(--text); }
-
-  input[type="file"] { display: none; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Expenses" />
+  <meta name="theme-color" content="#0f0f11" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <title>Expenses</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
 
-<nav class="nav">
-  <button class="nav-btn active" onclick="showPage('add')" id="nav-add">
-    <span class="nav-icon">＋</span>Add
-  </button>
-  <button class="nav-btn" onclick="showPage('report')" id="nav-report">
-    <span class="nav-icon">📊</span>Report
-  </button>
-  <button class="nav-btn" onclick="showPage('records')" id="nav-records">
-    <span class="nav-icon">📋</span>Records
-  </button>
-  <button class="nav-btn" onclick="showPage('export')" id="nav-export">
-    <span class="nav-icon">💾</span>Backup
-  </button>
-</nav>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showPage('add')" id="nav-add">
+      <span class="nav-icon icon-add"></span>Add
+    </button>
+    <button class="nav-btn" onclick="showPage('report')" id="nav-report">
+      <span class="nav-icon icon-report"></span>Report
+    </button>
+    <button class="nav-btn" onclick="showPage('records')" id="nav-records">
+      <span class="nav-icon icon-records"></span>Records
+    </button>
+    <button class="nav-btn" onclick="showPage('export')" id="nav-export">
+      <span class="nav-icon icon-backup"></span>Backup
+    </button>
+    <button class="nav-btn" onclick="showPage('settings')" id="nav-settings">
+      <span class="nav-icon icon-settings"></span>Settings
+    </button>
+  </nav>
 
-<!-- ADD PAGE -->
-<div class="page active" id="page-add">
-  <div class="page-title">Add expense</div>
+  <!-- ADD PAGE -->
+  <div class="page active" id="page-add">
+    <div class="page-header">
+      <div class="page-title">Add expense</div>
+    </div>
 
-  <div class="form-group">
-    <label>Date</label>
-    <input type="date" id="f-date"/>
+    <div class="form-group">
+      <label>Date</label>
+      <input type="text" id="f-date" placeholder="Select date" readonly />
+      <div class="quick-shortcuts date-shortcuts" aria-label="Date shortcuts">
+        <button type="button" data-date-offset="0">Today</button>
+        <button type="button" data-date-offset="-1">Yesterday</button>
+        <button type="button" data-date-offset="-2">2 days</button>
+        <button type="button" data-date-offset="-7">7 days</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Category</label>
+      <div class="cat-grid" id="category-grid"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Amount (&#8377;)</label>
+      <div class="amount-wrap">
+        <span class="currency">&#8377;</span>
+        <input type="number" id="f-amount" placeholder="0" inputmode="decimal" />
+      </div>
+      <div class="quick-shortcuts amount-shortcuts" aria-label="Amount shortcuts">
+        <button type="button" data-amount="50">&#8377;50</button>
+        <button type="button" data-amount="100">&#8377;100</button>
+        <button type="button" data-amount="200">&#8377;200</button>
+        <button type="button" data-amount="500">&#8377;500</button>
+        <button type="button" data-amount="1000">&#8377;1000</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>
+        Description
+        <span class="required-badge" id="req-badge">Required for Other</span>
+      </label>
+      <textarea id="f-desc" placeholder="What was this for?"></textarea>
+    </div>
+
+    <button class="btn-submit" onclick="saveExpense()">Save expense</button>
   </div>
 
-  <div class="form-group">
-    <label>Category</label>
-    <div class="cat-grid">
-      <button class="cat-btn" data-cat="Food" onclick="selectCat(this)">
-        <span class="cat-icon">🍽️</span>Food
+  <!-- REPORT PAGE -->
+  <div class="page" id="page-report">
+    <div class="page-title">Report</div>
+    <div class="month-selector">
+      <button class="month-nav" onclick="changeMonth(-1)" aria-label="Previous month">&lsaquo;</button>
+      <button class="month-label" id="month-label" onclick="openMonthPicker()" type="button"></button>
+      <button class="month-nav" onclick="changeMonth(1)" aria-label="Next month">&rsaquo;</button>
+      <input type="text" id="report-month" aria-label="Select report month" readonly />
+    </div>
+    <div class="summary-cards">
+      <div class="summary-card full">
+        <div class="s-label">Total spent</div>
+        <div class="s-value" id="r-total">&#8377; 0</div>
+      </div>
+      <div class="summary-card">
+        <div class="s-label">Transactions</div>
+        <div class="s-value" id="r-count">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="s-label">Daily avg</div>
+        <div class="s-value" id="r-avg">&#8377; 0</div>
+      </div>
+    </div>
+    <div class="section-title">Charts</div>
+    <div class="chart-grid">
+      <div class="chart-panel"><canvas id="pie-chart"></canvas></div>
+      <div class="chart-panel"><canvas id="bar-chart"></canvas></div>
+    </div>
+    <div class="section-title">By category</div>
+    <div class="bar-chart" id="cat-bars"></div>
+    <div class="section-title">Expenses this month</div>
+    <div class="expense-list" id="month-list"></div>
+  </div>
+
+  <!-- RECORDS PAGE -->
+  <div class="page" id="page-records">
+    <div class="page-title">All records</div>
+    <div class="filter-row" id="filter-row"></div>
+    <div class="expense-list" id="all-list"></div>
+  </div>
+
+  <!-- BACKUP PAGE -->
+  <div class="page" id="page-export">
+    <div class="page-title">Backup & Export</div>
+    <div class="stats-grid" id="export-stats"></div>
+    <div class="backup-info">
+      <p><strong>Backup reminder:</strong> Browser cache or site data can be cleared by the OS/browser. Keep a JSON backup in Drive/iCloud/OneDrive, or connect a client-side backup file from Settings where supported.</p>
+    </div>
+    <div class="section-title">Backup</div>
+    <button class="action-btn accent-btn" onclick="exportBackup()">
+      <span class="aicon ai-save"></span>
+      <div class="btn-text">Save backup (JSON)<div class="btn-sub">Save to iCloud Drive for safety</div>
+      </div>
+    </button>
+    <button class="action-btn accent-btn" onclick="prepareImportBackup()">
+      <span class="aicon ai-import"></span>
+      <div class="btn-text">Import backup (JSON)<div class="btn-sub">Merges — never overwrites</div>
+      </div>
+    </button>
+    <input type="file" id="import-file" accept=".json" onchange="importBackup(event)" />
+    <div class="section-title">Export</div>
+    <button class="action-btn accent-btn" onclick="exportExcel()">
+      <span class="aicon ai-excel"></span>
+      <div class="btn-text">Export as Excel (.xlsx)<div class="btn-sub">Records + summary sheets</div>
+      </div>
+    </button>
+    <button class="action-btn accent-btn" onclick="exportCSV()">
+      <span class="aicon ai-csv"></span>
+      <div class="btn-text">Export as CSV<div class="btn-sub">Open in any spreadsheet app</div>
+      </div>
+    </button>
+    <button class="action-btn accent-btn" onclick="exportPDF()">
+      <span class="aicon ai-pdf"></span>
+      <div class="btn-text">Export as PDF<div class="btn-sub">Printable report with totals</div>
+      </div>
+    </button>
+    <div class="section-title">Danger zone</div>
+    <button class="action-btn danger-btn" onclick="clearAllData()">
+      <span class="aicon ai-trash"></span>
+      <div class="btn-text">Clear all data<div class="btn-sub">Backup first — cannot be undone</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="page-title">Settings</div>
+    <div class="settings-block">
+      <div class="section-title">Theme</div>
+      <div class="theme-switcher settings-themes">
+        <button class="theme-dot active" data-t="slate" onclick="setTheme('slate')" title="Slate"></button>
+        <button class="theme-dot" data-t="pearl" onclick="setTheme('pearl')" title="Pearl"></button>
+        <button class="theme-dot" data-t="pink" onclick="setTheme('pink')" title="Baby pink"></button>
+        <button class="theme-dot" data-t="sage" onclick="setTheme('sage')" title="Sage"></button>
+      </div>
+    </div>
+    <div class="settings-block">
+      <div class="section-title">Preferences</div>
+      <label class="toggle-row"><span>Show decimals in amounts</span><input type="checkbox" id="setting-decimals"
+          onchange="saveSettings()" /></label>
+      <label class="toggle-row"><span>Ask/save backup after saving</span><input type="checkbox" id="setting-autobackup"
+          onchange="saveSettings()" /></label>
+    </div>
+    <div class="settings-block">
+      <div class="section-title">App & backup safety</div>
+      <button class="action-btn" id="install-app-btn" onclick="installApp()"><span class="aicon ai-save"></span>
+        <div class="btn-text">Install app<div class="btn-sub">Adds this tracker to your home screen where supported</div></div>
       </button>
-      <button class="cat-btn" data-cat="Transport" onclick="selectCat(this)">
-        <span class="cat-icon">🚗</span>Transport
+      <button class="action-btn accent-btn" onclick="connectBackupFile()"><span class="aicon ai-save"></span>
+        <div class="btn-text">Connect backup file<div class="btn-sub" id="cloud-sync-status">Client-only sync, no keys or secrets</div></div>
       </button>
-      <button class="cat-btn" data-cat="Health" onclick="selectCat(this)">
-        <span class="cat-icon">💊</span>Health
+      <button class="action-btn" onclick="writeConnectedBackup()"><span class="aicon ai-import"></span>
+        <div class="btn-text">Save to connected file<div class="btn-sub">Writes the latest JSON backup when permission is available</div></div>
       </button>
-      <button class="cat-btn" data-cat="Shopping" onclick="selectCat(this)">
-        <span class="cat-icon">🛍️</span>Shopping
-      </button>
-      <button class="cat-btn" data-cat="Bills" onclick="selectCat(this)">
-        <span class="cat-icon">🧾</span>Bills
-      </button>
-      <button class="cat-btn" data-cat="Entertainment" onclick="selectCat(this)">
-        <span class="cat-icon">🎬</span>Fun
-      </button>
-      <button class="cat-btn full-row" data-cat="Other" onclick="selectCat(this)">
-        <span class="cat-icon">📦</span>Other
+      <div class="backup-note">Works best on desktop Chromium browsers. On iPhone/Android, use Save backup and store the file in iCloud Drive, Google Drive, or OneDrive.</div>
+    </div>
+    <div class="settings-block">
+      <div class="section-title">Expense categories</div>
+      <div class="category-manager" id="category-manager"></div>
+      <div class="category-add-row"><input type="text" id="new-category" placeholder="New category name"
+          maxlength="24" /><button class="mini-btn" onclick="addCategory()">Add</button></div>
+      <button class="action-btn" onclick="resetCategories()"><span class="aicon ai-reset"></span>
+        <div class="btn-text">Reset categories<div class="btn-sub">Restore default master data</div>
+        </div>
       </button>
     </div>
   </div>
-
-  <div class="form-group">
-    <label>Amount (₹)</label>
-    <div class="amount-wrap">
-      <span class="currency">₹</span>
-      <input type="number" id="f-amount" placeholder="0" inputmode="decimal" step="0.01"/>
+  <div class="app-credit global-credit">
+    Created by
+    <a href="mailto:reeteshyadav4@gmail.com" aria-label="Email Ritesh Yadav">Ritesh Yadav</a>
+  </div>
+  <div class="modal-backdrop" id="confirm-modal" aria-hidden="true">
+    <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <div class="confirm-icon"><span class="aicon ai-trash"></span></div>
+      <div class="confirm-title" id="confirm-title">Delete expense?</div>
+      <div class="confirm-message" id="confirm-message">This action cannot be undone.</div>
+      <div class="confirm-actions"><button class="modal-btn secondary" id="confirm-cancel">Cancel</button><button
+          class="modal-btn danger" id="confirm-ok">Delete</button></div>
     </div>
   </div>
+  <div class="toast" id="toast"></div>
 
-  <div class="form-group">
-    <label>
-      Description
-      <span class="required-badge" id="req-badge">Required for Other</span>
-    </label>
-    <textarea id="f-desc" placeholder="What was this for?"></textarea>
-  </div>
-
-  <button class="btn-submit" onclick="saveExpense()">Save expense</button>
-</div>
-
-<!-- REPORT PAGE -->
-<div class="page" id="page-report">
-  <div class="page-title">Report</div>
-  <div class="month-selector">
-    <button class="month-nav" onclick="changeMonth(-1)">‹</button>
-    <span class="month-label" id="month-label"></span>
-    <button class="month-nav" onclick="changeMonth(1)">›</button>
-  </div>
-  <div class="summary-cards">
-    <div class="summary-card full">
-      <div class="s-label">Total spent</div>
-      <div class="s-value" id="r-total">₹0</div>
-    </div>
-    <div class="summary-card">
-      <div class="s-label">Transactions</div>
-      <div class="s-value" id="r-count">0</div>
-    </div>
-    <div class="summary-card">
-      <div class="s-label">Daily avg</div>
-      <div class="s-value" id="r-avg">₹0</div>
-    </div>
-  </div>
-  <div class="section-title">By category</div>
-  <div class="bar-chart" id="cat-bars"></div>
-  <div class="section-title">Expenses this month</div>
-  <div class="expense-list" id="month-list"></div>
-</div>
-
-<!-- RECORDS PAGE -->
-<div class="page" id="page-records">
-  <div class="page-title">All records</div>
-  <div class="filter-row" id="filter-row"></div>
-  <div class="expense-list" id="all-list"></div>
-</div>
-
-<!-- BACKUP PAGE -->
-<div class="page" id="page-export">
-  <div class="page-title">Backup & Export</div>
-
-  <div class="stats-grid" id="export-stats"></div>
-
-  <div class="backup-info">
-    <p><strong>How backup works:</strong> Save the backup JSON to iCloud Drive. If your data is ever lost, import it back — new entries after the backup are preserved, nothing is overwritten.</p>
-  </div>
-
-  <div class="section-title">Backup</div>
-  <button class="action-btn green" onclick="exportBackup()">
-    <span class="btn-icon">📤</span>
-    <div class="btn-text">
-      Save backup (JSON)
-      <div class="btn-sub">Save to iCloud Drive for safety</div>
-    </div>
-  </button>
-  <button class="action-btn purple" onclick="document.getElementById('import-file').click()">
-    <span class="btn-icon">📥</span>
-    <div class="btn-text">
-      Import backup (JSON)
-      <div class="btn-sub">Merges with existing data, no overwrite</div>
-    </div>
-  </button>
-  <input type="file" id="import-file" accept=".json" onchange="importBackup(event)"/>
-
-  <div class="section-title">Export</div>
-  <button class="action-btn green" onclick="exportExcel()">
-    <span class="btn-icon">📊</span>
-    <div class="btn-text">
-      Export as Excel (.xlsx)
-      <div class="btn-sub">Two sheets: all records + summary</div>
-    </div>
-  </button>
-  <button class="action-btn purple" onclick="exportCSV()">
-    <span class="btn-icon">📄</span>
-    <div class="btn-text">
-      Export as CSV
-      <div class="btn-sub">Open in any spreadsheet app</div>
-    </div>
-  </button>
-
-  <div class="section-title">Danger zone</div>
-  <button class="action-btn red" onclick="clearAllData()">
-    <span class="btn-icon">🗑️</span>
-    <div class="btn-text">
-      Clear all data
-      <div class="btn-sub">Backup first — this cannot be undone</div>
-    </div>
-  </button>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-const CATS = {
-  Food: '🍽️', Transport: '🚗', Health: '💊',
-  Shopping: '🛍️', Bills: '🧾', Entertainment: '🎬', Other: '📦'
-};
-const CAT_COLORS = {
-  Food:'#ff9f6a', Transport:'#6ab8ff', Health:'#b86aff',
-  Shopping:'#ff6a9f', Bills:'#6affda', Entertainment:'#ffda6a', Other:'#a0a0b8'
-};
-
-let db, selectedCat = null, currentMonth = new Date(), activeFilter = 'All';
-
-function initDB() {
-  const req = indexedDB.open('ExpenseDB', 1);
-  req.onupgradeneeded = e => {
-    const store = e.target.result.createObjectStore('expenses', { keyPath: 'id', autoIncrement: true });
-    store.createIndex('date', 'date');
-  };
-  req.onsuccess = e => {
-    db = e.target.result;
-    setDefaultDate();
-  };
-}
-
-function setDefaultDate() {
-  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
-}
-
-function tx(mode = 'readonly') {
-  return db.transaction('expenses', mode).objectStore('expenses');
-}
-
-function getAllExpenses() {
-  return new Promise(res => { const r = tx().getAll(); r.onsuccess = () => res(r.result); });
-}
-
-function selectCat(btn) {
-  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  selectedCat = btn.dataset.cat;
-  const badge = document.getElementById('req-badge');
-  badge.classList.toggle('show', selectedCat === 'Other');
-}
-
-async function saveExpense() {
-  const date = document.getElementById('f-date').value;
-  const amount = parseFloat(document.getElementById('f-amount').value);
-  const desc = document.getElementById('f-desc').value.trim();
-
-  if (!date) { showToast('Pick a date', true); return; }
-  if (!selectedCat) { showToast('Pick a category', true); return; }
-  if (!amount || amount <= 0) { showToast('Enter a valid amount', true); return; }
-  if (selectedCat === 'Other' && !desc) {
-    showToast('Description is required for Other', true);
-    document.getElementById('f-desc').focus();
-    return;
-  }
-
-  const record = { date, category: selectedCat, amount, description: desc, createdAt: Date.now() };
-  const req = tx('readwrite').add(record);
-  req.onsuccess = async () => {
-    showToast('Saved!');
-    document.getElementById('f-amount').value = '';
-    document.getElementById('f-desc').value = '';
-    selectedCat = null;
-    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
-    document.getElementById('req-badge').classList.remove('show');
-    setDefaultDate();
-    await autoBackup();
-  };
-}
-
-function deleteExpense(id) {
-  if (!confirm('Delete this expense?')) return;
-  tx('readwrite').delete(id);
-  setTimeout(() => { renderReport(); renderRecords(); }, 150);
-}
-
-// ── Auto backup ──────────────────────────────────────────────
-async function autoBackup() {
-  try {
-    const all = await getAllExpenses();
-    const json = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), expenses: all }, null, 2);
-    localStorage.setItem('expense_auto_backup', json);
-    localStorage.setItem('expense_backup_count', all.length);
-    localStorage.setItem('expense_backup_ts', new Date().toISOString());
-  } catch(e) {}
-}
-
-// ── Manual backup export ──────────────────────────────────────
-async function exportBackup() {
-  const all = await getAllExpenses();
-  if (!all.length) { showToast('No data to backup', true); return; }
-  const json = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), expenses: all }, null, 2);
-  const a = document.createElement('a');
-  a.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
-  a.download = `expense_backup_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  showToast('Backup saved!');
-}
-
-// ── Import backup (merge, no overwrite) ──────────────────────
-async function importBackup(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const text = await file.text();
-  let parsed;
-  try { parsed = JSON.parse(text); } catch { showToast('Invalid backup file', true); return; }
-
-  const incoming = parsed.expenses || parsed;
-  if (!Array.isArray(incoming) || !incoming.length) { showToast('No data found in file', true); return; }
-
-  const existing = await getAllExpenses();
-  // Use createdAt as deduplication key — skip records already in DB
-  const existingKeys = new Set(existing.map(e => e.createdAt));
-  const toAdd = incoming.filter(e => !existingKeys.has(e.createdAt));
-
-  if (!toAdd.length) { showToast('All records already exist — nothing added'); return; }
-
-  const store = tx('readwrite');
-  let added = 0;
-  toAdd.forEach(rec => {
-    const { id, ...rest } = rec; // strip old id, let DB assign new one
-    store.add(rest);
-    added++;
-  });
-
-  setTimeout(() => {
-    showToast(`Imported ${added} new record${added > 1 ? 's' : ''}!`);
-    renderReport(); renderRecords(); renderExportStats();
-  }, 200);
-
-  e.target.value = '';
-}
-
-// ── Month navigation ──────────────────────────────────────────
-function changeMonth(dir) {
-  currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + dir, 1);
-  renderReport();
-}
-
-function fmt(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
-
-async function renderReport() {
-  const all = await getAllExpenses();
-  const y = currentMonth.getFullYear(), m = currentMonth.getMonth();
-  const md = all.filter(e => { const d = new Date(e.date); return d.getFullYear()===y && d.getMonth()===m; });
-
-  document.getElementById('month-label').textContent =
-    currentMonth.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-
-  const total = md.reduce((s,e) => s+e.amount, 0);
-  const days = new Date(y, m+1, 0).getDate();
-  document.getElementById('r-total').textContent = fmt(total);
-  document.getElementById('r-count').textContent = md.length;
-  document.getElementById('r-avg').textContent = fmt(total / days);
-
-  const catTotals = {};
-  md.forEach(e => { catTotals[e.category] = (catTotals[e.category]||0) + e.amount; });
-  const sorted = Object.entries(catTotals).sort((a,b) => b[1]-a[1]);
-  const maxVal = sorted[0]?.[1] || 1;
-
-  const barsEl = document.getElementById('cat-bars');
-  barsEl.innerHTML = sorted.length ? sorted.map(([cat, val]) => `
-    <div class="bar-row">
-      <div class="bar-label">${CATS[cat]||'📦'} ${cat}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${(val/maxVal*100).toFixed(1)}%;background:${CAT_COLORS[cat]||'#a0a0b8'}"></div></div>
-      <div class="bar-amount">${fmt(val)}</div>
-    </div>`).join('') : '<div class="empty">No expenses this month</div>';
-
-  const sorted2 = [...md].sort((a,b) => new Date(b.date)-new Date(a.date));
-  document.getElementById('month-list').innerHTML = sorted2.length ? sorted2.map(expenseHTML).join('') : '<div class="empty">No expenses this month</div>';
-}
-
-function expenseHTML(e) {
-  const d = new Date(e.date + 'T00:00:00');
-  const dateStr = d.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
-  return `<div class="expense-item">
-    <div class="exp-icon">${CATS[e.category]||'📦'}</div>
-    <div class="expense-info">
-      <div class="expense-cat">${e.category}</div>
-      <div class="expense-desc">${e.description || '—'}</div>
-    </div>
-    <div class="expense-right">
-      <div class="expense-amount">${fmt(e.amount)}</div>
-      <div class="expense-date">${dateStr}</div>
-    </div>
-    <button class="expense-delete" onclick="deleteExpense(${e.id})">✕</button>
-  </div>`;
-}
-
-async function renderRecords() {
-  const all = await getAllExpenses();
-  const cats = ['All', ...Object.keys(CATS).filter(c => all.some(e => e.category===c))];
-  document.getElementById('filter-row').innerHTML = cats.map(c =>
-    `<button class="filter-chip ${c===activeFilter?'active':''}" onclick="setFilter('${c}')">${c==='All'?'All':CATS[c]+' '+c}</button>`
-  ).join('');
-  const filtered = activeFilter==='All' ? all : all.filter(e => e.category===activeFilter);
-  const sorted = [...filtered].sort((a,b) => new Date(b.date)-new Date(a.date));
-  document.getElementById('all-list').innerHTML = sorted.length ? sorted.map(expenseHTML).join('') : '<div class="empty">No records found</div>';
-}
-
-function setFilter(cat) { activeFilter = cat; renderRecords(); }
-
-async function renderExportStats() {
-  const all = await getAllExpenses();
-  const total = all.reduce((s,e)=>s+e.amount,0);
-  const months = new Set(all.map(e=>e.date.slice(0,7))).size;
-  const lastBackup = localStorage.getItem('expense_backup_ts');
-  const backupCount = localStorage.getItem('expense_backup_count') || 0;
-  document.getElementById('export-stats').innerHTML = `
-    <div class="stat-box"><div class="s-num">${all.length}</div><div class="s-lbl">Records</div></div>
-    <div class="stat-box"><div class="s-num">${fmt(total)}</div><div class="s-lbl">Total</div></div>
-    <div class="stat-box"><div class="s-num">${months}</div><div class="s-lbl">Months</div></div>
-    <div class="stat-box"><div class="s-num">${lastBackup ? new Date(lastBackup).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '—'}</div><div class="s-lbl">Last backup</div></div>
-  `;
-}
-
-async function exportExcel() {
-  const all = await getAllExpenses();
-  if (!all.length) { showToast('No data', true); return; }
-  const data = all.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(e=>({
-    Date: e.date, Category: e.category, Amount: e.amount, Description: e.description||''
-  }));
-  const catTotals = {};
-  all.forEach(e=>{ catTotals[e.category]=(catTotals[e.category]||0)+e.amount; });
-  const summary = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>({
-    Category: cat, 'Total Amount': amt, Count: all.filter(e=>e.category===cat).length
-  }));
-  const wb = XLSX.utils.book_new();
-  const ws1 = XLSX.utils.json_to_sheet(data);
-  const ws2 = XLSX.utils.json_to_sheet(summary);
-  ws1['!cols'] = [{wch:12},{wch:14},{wch:12},{wch:40}];
-  ws2['!cols'] = [{wch:16},{wch:14},{wch:8}];
-  XLSX.utils.book_append_sheet(wb, ws1, 'Expenses');
-  XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
-  XLSX.writeFile(wb, `expenses_${new Date().toISOString().slice(0,10)}.xlsx`);
-  showToast('Excel downloaded!');
-}
-
-async function exportCSV() {
-  const all = await getAllExpenses();
-  if (!all.length) { showToast('No data', true); return; }
-  const rows = [['Date','Category','Amount','Description'],
-    ...all.sort((a,b)=>new Date(a.date)-new Date(b.date)).map(e=>[e.date,e.category,e.amount,e.description||''])
-  ];
-  const csv = rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = `expenses_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-  showToast('CSV downloaded!');
-}
-
-function clearAllData() {
-  if (!confirm('Delete ALL data permanently?\n\nExport a backup first!')) return;
-  tx('readwrite').clear();
-  localStorage.removeItem('expense_auto_backup');
-  setTimeout(() => { renderReport(); renderRecords(); renderExportStats(); showToast('Cleared'); }, 150);
-}
-
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  document.getElementById('nav-'+name).classList.add('active');
-  if (name==='report') renderReport();
-  if (name==='records') renderRecords();
-  if (name==='export') renderExportStats();
-}
-
-function showToast(msg, isError=false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast' + (isError ? ' error' : '');
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2400);
-}
-
-initDB();
-</script>
+  <script src="app.js"></script>
 </body>
+
 </html>
