@@ -1,272 +1,426 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Expenses" />
+    <meta name="theme-color" content="#0f0f11" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <title>Expenses</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Expenses" />
-  <meta name="theme-color" content="#0f0f11" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon.svg" type="image/svg+xml" />
-  <title>Expenses</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <link rel="stylesheet" href="styles.css" />
-</head>
+  <body>
+    <nav class="nav">
+      <button class="nav-btn active" onclick="showPage('add')" id="nav-add">
+        <span class="nav-icon icon-add"></span>Add
+      </button>
+      <button class="nav-btn" onclick="showPage('report')" id="nav-report">
+        <span class="nav-icon icon-report"></span>Report
+      </button>
+      <button class="nav-btn" onclick="showPage('records')" id="nav-records">
+        <span class="nav-icon icon-records"></span>Records
+      </button>
+      <button class="nav-btn" onclick="showPage('export')" id="nav-export">
+        <span class="nav-icon icon-backup"></span>Backup
+      </button>
+      <button class="nav-btn" onclick="showPage('settings')" id="nav-settings">
+        <span class="nav-icon icon-settings"></span>Settings
+      </button>
+    </nav>
 
-<body>
+    <!-- ADD PAGE -->
+    <div class="page active" id="page-add">
+      <div class="page-header">
+        <div class="page-title">Add expense</div>
+      </div>
 
-  <nav class="nav">
-    <button class="nav-btn active" onclick="showPage('add')" id="nav-add">
-      <span class="nav-icon icon-add"></span>Add
-    </button>
-    <button class="nav-btn" onclick="showPage('report')" id="nav-report">
-      <span class="nav-icon icon-report"></span>Report
-    </button>
-    <button class="nav-btn" onclick="showPage('records')" id="nav-records">
-      <span class="nav-icon icon-records"></span>Records
-    </button>
-    <button class="nav-btn" onclick="showPage('export')" id="nav-export">
-      <span class="nav-icon icon-backup"></span>Backup
-    </button>
-    <button class="nav-btn" onclick="showPage('settings')" id="nav-settings">
-      <span class="nav-icon icon-settings"></span>Settings
-    </button>
-  </nav>
-
-  <!-- ADD PAGE -->
-  <div class="page active" id="page-add">
-    <div class="page-header">
-      <div class="page-title">Add expense</div>
-    </div>
-
-    <div class="form-group">
-      <label>Date</label>
-      <input type="text" id="f-date" placeholder="Select date" readonly />
-      <div class="quick-shortcuts date-shortcuts" aria-label="Date shortcuts">
-        <button type="button" data-date-offset="0">Today</button>
-        <button type="button" data-date-offset="-1">Yesterday</button>
-        <button type="button" data-date-offset="-2">2 days</button>
-        <button type="button" data-date-offset="-7">7 days</button>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>Category</label>
-      <div class="cat-grid" id="category-grid"></div>
-    </div>
-
-    <div class="form-group">
-      <label>Amount (&#8377;)</label>
-      <div class="amount-wrap">
-        <span class="currency">&#8377;</span>
-        <input type="number" id="f-amount" placeholder="0.00" inputmode="decimal" step="0.01" />
-      </div>
-      <div class="quick-shortcuts amount-shortcuts" aria-label="Amount shortcuts">
-        <button type="button" data-amount="50">&#8377;50</button>
-        <button type="button" data-amount="100">&#8377;100</button>
-        <button type="button" data-amount="200">&#8377;200</button>
-        <button type="button" data-amount="500">&#8377;500</button>
-        <button type="button" data-amount="1000">&#8377;1000</button>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>
-        Description
-        <span class="required-badge" id="req-badge">Required for Other</span>
-      </label>
-      <textarea id="f-desc" placeholder="What was this for?"></textarea>
-      <div class="quick-shortcuts desc-shortcuts" id="desc-shortcuts" aria-label="Description shortcuts"></div>
-    </div>
-
-    <button class="btn-submit" onclick="saveExpense()">Save expense</button>
-  </div>
-
-  <!-- REPORT PAGE -->
-  <div class="page" id="page-report">
-    <div class="page-title">Report</div>
-    <div class="month-selector">
-      <button class="month-nav" onclick="changeMonth(-1)" aria-label="Previous month">&lsaquo;</button>
-      <button class="month-label" id="month-label" onclick="openMonthPicker()" type="button"></button>
-      <button class="month-nav" onclick="changeMonth(1)" aria-label="Next month">&rsaquo;</button>
-      <input type="text" id="report-month" aria-label="Select report month" readonly />
-    </div>
-    <div class="summary-cards">
-      <div class="summary-card full">
-        <div class="s-label">Total spent</div>
-        <div class="s-value" id="r-total">&#8377; 0</div>
-      </div>
-      <div class="summary-card">
-        <div class="s-label">Transactions</div>
-        <div class="s-value" id="r-count">0</div>
-      </div>
-      <div class="summary-card">
-        <div class="s-label">Daily avg</div>
-        <div class="s-value" id="r-avg">&#8377; 0</div>
-      </div>
-    </div>
-    <div class="section-title">Charts</div>
-    <div class="chart-grid">
-      <div class="chart-panel"><canvas id="pie-chart"></canvas></div>
-      <div class="chart-panel"><canvas id="bar-chart"></canvas></div>
-    </div>
-    <div class="section-title">By category</div>
-    <div class="bar-chart" id="cat-bars"></div>
-    <div class="section-title">Expenses this month</div>
-    <div class="expense-list" id="month-list"></div>
-  </div>
-
-  <!-- RECORDS PAGE -->
-  <div class="page" id="page-records">
-    <div class="page-title">All records</div>
-    <div class="filter-row" id="filter-row"></div>
-    <div class="expense-list" id="all-list"></div>
-  </div>
-
-  <!-- BACKUP PAGE -->
-  <div class="page" id="page-export">
-    <div class="page-title">Backup & Export</div>
-    <div class="stats-grid" id="export-stats"></div>
-    <div class="backup-info">
-      <p><strong>Backup reminder:</strong> Browser cache or site data can be cleared by the OS/browser. Keep a JSON backup in Drive, iCloud, or OneDrive.</p>
-    </div>
-    <div class="section-title">Backup</div>
-    <button class="action-btn accent-btn" onclick="exportBackup()">
-      <span class="aicon ai-save"></span>
-      <div class="btn-text">Save backup (JSON)<div class="btn-sub">Save to iCloud Drive for safety</div>
-      </div>
-    </button>
-    <button class="action-btn accent-btn" onclick="prepareImportBackup()">
-      <span class="aicon ai-import"></span>
-      <div class="btn-text">Import backup (JSON)<div class="btn-sub">Merges — never overwrites</div>
-      </div>
-    </button>
-    <input type="file" id="import-file" accept=".json" onchange="importBackup(event)" />
-    <div class="section-title">Export</div>
-    <button class="action-btn accent-btn" onclick="exportExcel()">
-      <span class="aicon ai-excel"></span>
-      <div class="btn-text">Export as Excel (.xlsx)<div class="btn-sub">Records + summary sheets</div>
-      </div>
-    </button>
-    <button class="action-btn accent-btn" onclick="exportCSV()">
-      <span class="aicon ai-csv"></span>
-      <div class="btn-text">Export as CSV<div class="btn-sub">Open in any spreadsheet app</div>
-      </div>
-    </button>
-    <button class="action-btn accent-btn" onclick="exportPDF()">
-      <span class="aicon ai-pdf"></span>
-      <div class="btn-text">Export as PDF<div class="btn-sub">Printable report with totals</div>
-      </div>
-    </button>
-    <div class="section-title">Danger zone</div>
-    <button class="action-btn danger-btn" onclick="clearAllData()">
-      <span class="aicon ai-trash"></span>
-      <div class="btn-text">Clear all data<div class="btn-sub">Backup first — cannot be undone</div>
-      </div>
-    </button>
-  </div>
-
-  <!-- SETTINGS PAGE -->
-  <div class="page" id="page-settings">
-    <div class="page-title">Settings</div>
-    <div class="settings-block">
-      <div class="section-title">Theme</div>
-      <div class="theme-switcher settings-themes">
-        <button class="theme-dot active" data-t="slate" onclick="setTheme('slate')" title="Slate"></button>
-        <button class="theme-dot" data-t="pearl" onclick="setTheme('pearl')" title="Pearl"></button>
-        <button class="theme-dot" data-t="pink" onclick="setTheme('pink')" title="Modern pink"></button>
-        <button class="theme-dot" data-t="midnight" onclick="setTheme('midnight')" title="Midnight"></button>
-      </div>
-    </div>
-    <div class="settings-block">
-      <div class="section-title">Display</div>
-      <div class="font-size-control" aria-label="Font size">
-        <button class="mini-btn secondary" onclick="changeFontSize(-1)">A-</button>
-        <div class="font-size-value" id="font-size-label">Normal</div>
-        <button class="mini-btn secondary" onclick="changeFontSize(1)">A+</button>
-      </div>
-    </div>
-    <div class="settings-block">
-      <div class="section-title">Cloud account</div>
-      <div class="auth-panel" id="auth-panel">
-        <div class="auth-status" id="auth-status">Cloud sync not configured</div>
-        <div class="auth-form" id="auth-form">
-          <input type="email" id="auth-email" placeholder="Email" autocomplete="email" />
-          <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password" />
-          <div class="auth-actions">
-            <button class="mini-btn" onclick="loginWithEmail()">Login</button>
-          </div>
-        </div>
-        <div class="auth-signed-in" id="auth-signed-in" hidden>
-          <div class="profile-card">
-            <div class="profile-greeting" id="profile-greeting">Hey!</div>
-            <div class="profile-meta" id="profile-meta"></div>
-          </div>
-          <button class="action-btn" onclick="syncNow()"><span class="aicon ai-import"></span>
-            <div class="btn-text">Sync now<div class="btn-sub" id="cloud-sync-status">Cloud sync ready</div></div>
-          </button>
-          <div class="password-form">
-            <input type="password" id="new-password" placeholder="New password" autocomplete="new-password" />
-            <input type="password" id="confirm-password" placeholder="Confirm password" autocomplete="new-password" />
-            <button class="mini-btn" onclick="changePassword()">Change password</button>
-          </div>
-          <button class="action-btn danger-btn" onclick="logoutCloud()"><span class="aicon ai-trash"></span>
-            <div class="btn-text">Logout<div class="btn-sub">Local records stay on this device</div></div>
-          </button>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="text" id="f-date" placeholder="Select date" readonly />
+        <div class="quick-shortcuts date-shortcuts" aria-label="Date shortcuts">
+          <button type="button" data-date-offset="0">Today</button>
+          <button type="button" data-date-offset="-1">Yesterday</button>
+          <button type="button" data-date-offset="-2">2 days</button>
+          <button type="button" data-date-offset="-7">7 days</button>
         </div>
       </div>
+
+      <div class="form-group">
+        <label>Category</label>
+        <div class="cat-grid" id="category-grid"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Amount (&#8377;)</label>
+        <div class="amount-wrap">
+          <span class="currency">&#8377;</span>
+          <input
+            type="number"
+            id="f-amount"
+            placeholder="0.00"
+            inputmode="decimal"
+            step="0.01"
+          />
+        </div>
+        <div
+          class="quick-shortcuts amount-shortcuts"
+          aria-label="Amount shortcuts"
+        >
+          <button type="button" data-amount="50">&#8377;50</button>
+          <button type="button" data-amount="100">&#8377;100</button>
+          <button type="button" data-amount="200">&#8377;200</button>
+          <button type="button" data-amount="500">&#8377;500</button>
+          <button type="button" data-amount="1000">&#8377;1000</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>
+          Description
+          <span class="required-badge" id="req-badge">Required for Other</span>
+        </label>
+        <textarea id="f-desc" placeholder="What was this for?"></textarea>
+        <div
+          class="quick-shortcuts desc-shortcuts"
+          id="desc-shortcuts"
+          aria-label="Description shortcuts"
+        ></div>
+      </div>
+
+      <button class="btn-submit" onclick="saveExpense()">Save expense</button>
     </div>
-    <div class="settings-block">
-      <div class="section-title">App & backup safety</div>
-      <button class="action-btn" id="install-app-btn" onclick="installApp()"><span class="aicon ai-save"></span>
-        <div class="btn-text">Install app<div class="btn-sub">Adds this tracker to your home screen where supported</div></div>
+
+    <!-- REPORT PAGE -->
+    <div class="page" id="page-report">
+      <div class="page-title">Report</div>
+      <div class="month-selector">
+        <button
+          class="month-nav"
+          onclick="changeMonth(-1)"
+          aria-label="Previous month"
+        >
+          &lsaquo;
+        </button>
+        <button
+          class="month-label"
+          id="month-label"
+          onclick="openMonthPicker()"
+          type="button"
+        ></button>
+        <button
+          class="month-nav"
+          onclick="changeMonth(1)"
+          aria-label="Next month"
+        >
+          &rsaquo;
+        </button>
+        <input
+          type="text"
+          id="report-month"
+          aria-label="Select report month"
+          readonly
+        />
+      </div>
+      <div class="summary-cards">
+        <div class="summary-card full">
+          <div class="s-label">Total spent</div>
+          <div class="s-value" id="r-total">&#8377; 0</div>
+        </div>
+        <div class="summary-card">
+          <div class="s-label">Transactions</div>
+          <div class="s-value" id="r-count">0</div>
+        </div>
+        <div class="summary-card">
+          <div class="s-label">Daily avg</div>
+          <div class="s-value" id="r-avg">&#8377; 0</div>
+        </div>
+      </div>
+      <div class="section-title">Charts</div>
+      <div class="chart-grid">
+        <div class="chart-panel"><canvas id="pie-chart"></canvas></div>
+        <div class="chart-panel"><canvas id="bar-chart"></canvas></div>
+      </div>
+      <div class="section-title">By category</div>
+      <div class="bar-chart" id="cat-bars"></div>
+      <div class="section-title">Expenses this month</div>
+      <div class="expense-list" id="month-list"></div>
+    </div>
+
+    <!-- RECORDS PAGE -->
+    <div class="page" id="page-records">
+      <div class="page-title">All records</div>
+      <div class="filter-row" id="filter-row"></div>
+      <div class="expense-list" id="all-list"></div>
+    </div>
+
+    <!-- BACKUP PAGE -->
+    <div class="page" id="page-export">
+      <div class="page-title">Backup & Export</div>
+      <div class="stats-grid" id="export-stats"></div>
+      <div class="backup-info">
+        <p>
+          <strong>Backup reminder:</strong> Browser cache or site data can be
+          cleared by the OS/browser. Keep a JSON backup in Drive, iCloud, or
+          OneDrive.
+        </p>
+      </div>
+      <div class="section-title">Backup</div>
+      <button class="action-btn accent-btn" onclick="exportBackup()">
+        <span class="aicon ai-save"></span>
+        <div class="btn-text">
+          Save backup (JSON)
+          <div class="btn-sub">Save to iCloud Drive for safety</div>
+        </div>
+      </button>
+      <button class="action-btn accent-btn" onclick="prepareImportBackup()">
+        <span class="aicon ai-import"></span>
+        <div class="btn-text">
+          Import backup (JSON)
+          <div class="btn-sub">Merges — never overwrites</div>
+        </div>
+      </button>
+      <input
+        type="file"
+        id="import-file"
+        accept=".json"
+        onchange="importBackup(event)"
+      />
+      <div class="section-title">Export</div>
+      <button class="action-btn accent-btn" onclick="exportExcel()">
+        <span class="aicon ai-excel"></span>
+        <div class="btn-text">
+          Export as Excel (.xlsx)
+          <div class="btn-sub">Records + summary sheets</div>
+        </div>
+      </button>
+      <button class="action-btn accent-btn" onclick="exportCSV()">
+        <span class="aicon ai-csv"></span>
+        <div class="btn-text">
+          Export as CSV
+          <div class="btn-sub">Open in any spreadsheet app</div>
+        </div>
+      </button>
+      <button class="action-btn accent-btn" onclick="exportPDF()">
+        <span class="aicon ai-pdf"></span>
+        <div class="btn-text">
+          Export as PDF
+          <div class="btn-sub">Printable report with totals</div>
+        </div>
+      </button>
+      <div class="section-title">Danger zone</div>
+      <button class="action-btn danger-btn" onclick="clearAllData()">
+        <span class="aicon ai-trash"></span>
+        <div class="btn-text">
+          Clear all data
+          <div class="btn-sub">Backup first — cannot be undone</div>
+        </div>
       </button>
     </div>
-    <div class="settings-block">
-      <div class="section-title">Description shortcuts</div>
-      <div class="shortcut-editor">
-        <div class="select-wrap">
-          <select id="shortcut-category" onchange="renderShortcutManager()"></select>
-        </div>
-        <div class="shortcut-add-row">
-          <input type="text" id="new-shortcut" placeholder="New shortcut" maxlength="32" />
-          <button class="mini-btn" onclick="addDescriptionShortcut()">Add</button>
+
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <div class="page-title">Settings</div>
+      <div class="settings-block">
+        <div class="section-title">Theme</div>
+        <div class="theme-switcher settings-themes">
+          <button
+            class="theme-dot active"
+            data-t="slate"
+            onclick="setTheme('slate')"
+            title="Slate"
+          ></button>
+          <button
+            class="theme-dot"
+            data-t="pearl"
+            onclick="setTheme('pearl')"
+            title="Pearl"
+          ></button>
+          <button
+            class="theme-dot"
+            data-t="pink"
+            onclick="setTheme('pink')"
+            title="Modern pink"
+          ></button>
+          <button
+            class="theme-dot"
+            data-t="midnight"
+            onclick="setTheme('midnight')"
+            title="Midnight"
+          ></button>
         </div>
       </div>
-      <div class="shortcut-manager" id="shortcut-manager"></div>
-      <button class="action-btn" onclick="resetDescriptionShortcuts()"><span class="aicon ai-reset"></span>
-        <div class="btn-text">Reset shortcuts<div class="btn-sub">Restore default description buttons</div></div>
-      </button>
+      <div class="settings-block">
+        <div class="section-title">Display</div>
+        <div class="font-size-control" aria-label="Font size">
+          <button class="mini-btn secondary" onclick="changeFontSize(-1)">
+            A-
+          </button>
+          <div class="font-size-value" id="font-size-label">Normal</div>
+          <button class="mini-btn secondary" onclick="changeFontSize(1)">
+            A+
+          </button>
+        </div>
+      </div>
+      <div class="settings-block">
+        <div class="section-title">Cloud account</div>
+        <div class="auth-panel" id="auth-panel">
+          <div class="auth-status" id="auth-status">
+            Cloud sync not configured
+          </div>
+          <div class="auth-form" id="auth-form">
+            <input
+              type="email"
+              id="auth-email"
+              placeholder="Email"
+              autocomplete="email"
+            />
+            <input
+              type="password"
+              id="auth-password"
+              placeholder="Password"
+              autocomplete="current-password"
+            />
+            <div class="auth-actions">
+              <button class="mini-btn" onclick="loginWithEmail()">Login</button>
+            </div>
+          </div>
+          <div class="auth-signed-in" id="auth-signed-in" hidden>
+            <div class="profile-card">
+              <div class="profile-greeting" id="profile-greeting">Hey!</div>
+              <div class="profile-meta" id="profile-meta"></div>
+            </div>
+            <button class="action-btn" onclick="syncNow()">
+              <span class="aicon ai-import"></span>
+              <div class="btn-text">
+                Sync now
+                <div class="btn-sub" id="cloud-sync-status">
+                  Cloud sync ready
+                </div>
+              </div>
+            </button>
+            <div class="password-form">
+              <input
+                type="password"
+                id="new-password"
+                placeholder="New password"
+                autocomplete="new-password"
+              />
+              <input
+                type="password"
+                id="confirm-password"
+                placeholder="Confirm password"
+                autocomplete="new-password"
+              />
+              <button class="mini-btn" onclick="changePassword()">
+                Change password
+              </button>
+            </div>
+            <button class="action-btn danger-btn" onclick="logoutCloud()">
+              <span class="aicon ai-trash"></span>
+              <div class="btn-text">
+                Logout
+                <div class="btn-sub">Local records stay on this device</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="settings-block">
+        <div class="section-title">App & backup safety</div>
+        <button class="action-btn" id="install-app-btn" onclick="installApp()">
+          <span class="aicon ai-save"></span>
+          <div class="btn-text">
+            Install app
+            <div class="btn-sub">
+              Adds this tracker to your home screen where supported
+            </div>
+          </div>
+        </button>
+      </div>
+      <div class="settings-block">
+        <div class="section-title">Description shortcuts</div>
+        <div class="shortcut-editor">
+          <div class="select-wrap">
+            <select
+              id="shortcut-category"
+              onchange="renderShortcutManager()"
+            ></select>
+          </div>
+          <div class="shortcut-add-row">
+            <input
+              type="text"
+              id="new-shortcut"
+              placeholder="New shortcut"
+              maxlength="32"
+            />
+            <button class="mini-btn" onclick="addDescriptionShortcut()">
+              Add
+            </button>
+          </div>
+        </div>
+        <div class="shortcut-manager" id="shortcut-manager"></div>
+        <button class="action-btn" onclick="resetDescriptionShortcuts()">
+          <span class="aicon ai-reset"></span>
+          <div class="btn-text">
+            Reset shortcuts
+            <div class="btn-sub">Restore default description buttons</div>
+          </div>
+        </button>
+      </div>
     </div>
-  </div>
-  <div class="app-credit global-credit">
-    Created by
-    <a href="mailto:reeteshyadav4@gmail.com" aria-label="Email Ritesh Yadav">Ritesh Yadav</a>
-  </div>
-  <div class="modal-backdrop" id="confirm-modal" aria-hidden="true">
-    <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-      <div class="confirm-icon"><span class="aicon ai-trash"></span></div>
-      <div class="confirm-title" id="confirm-title">Delete expense?</div>
-      <div class="confirm-message" id="confirm-message">This action cannot be undone.</div>
-      <div class="confirm-actions"><button class="modal-btn secondary" id="confirm-cancel">Cancel</button><button
-          class="modal-btn danger" id="confirm-ok">Delete</button></div>
+    <div class="app-credit global-credit">
+      Created by
+      <a href="mailto:reeteshyadav4@gmail.com" aria-label="Email Ritesh Yadav"
+        >Ritesh Yadav</a
+      >
     </div>
-  </div>
-  <div class="toast" id="toast"></div>
+    <div class="modal-backdrop" id="confirm-modal" aria-hidden="true">
+      <div
+        class="confirm-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
+      >
+        <div class="confirm-icon"><span class="aicon ai-trash"></span></div>
+        <div class="confirm-title" id="confirm-title">Delete expense?</div>
+        <div class="confirm-message" id="confirm-message">
+          This action cannot be undone.
+        </div>
+        <div class="confirm-actions">
+          <button class="modal-btn secondary" id="confirm-cancel">Cancel</button
+          ><button class="modal-btn danger" id="confirm-ok">Delete</button>
+        </div>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js"></script>
-  <script src="supabase-sync.js"></script>
-  <script src="app.js"></script>
-</body>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-sync.js"></script>
+    <script src="app.js"></script>
+  </body>
 </html>
