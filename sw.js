@@ -1,9 +1,11 @@
-const CACHE_NAME = 'expenses-pwa-v5';
+const CACHE_NAME = 'expenses-pwa-v6';
 const APP_SHELL = [
   './',
   './index.html',
   './styles.css',
   './app.js',
+  './supabase-config.js',
+  './supabase-sync.js',
   './manifest.json',
   './icon.svg'
 ];

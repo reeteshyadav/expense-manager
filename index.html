@@ -68,7 +68,7 @@
       <label>Amount (&#8377;)</label>
       <div class="amount-wrap">
         <span class="currency">&#8377;</span>
-        <input type="number" id="f-amount" placeholder="0" inputmode="decimal" />
+        <input type="number" id="f-amount" placeholder="0.00" inputmode="decimal" step="0.01" />
       </div>
       <div class="quick-shortcuts amount-shortcuts" aria-label="Amount shortcuts">
         <button type="button" data-amount="50">&#8377;50</button>
@@ -85,6 +85,7 @@
         <span class="required-badge" id="req-badge">Required for Other</span>
       </label>
       <textarea id="f-desc" placeholder="What was this for?"></textarea>
+      <div class="quick-shortcuts desc-shortcuts" id="desc-shortcuts" aria-label="Description shortcuts"></div>
     </div>
 
     <button class="btn-submit" onclick="saveExpense()">Save expense</button>
@@ -136,7 +137,7 @@
     <div class="page-title">Backup & Export</div>
     <div class="stats-grid" id="export-stats"></div>
     <div class="backup-info">
-      <p><strong>Backup reminder:</strong> Browser cache or site data can be cleared by the OS/browser. Keep a JSON backup in Drive/iCloud/OneDrive, or connect a client-side backup file from Settings where supported.</p>
+      <p><strong>Backup reminder:</strong> Browser cache or site data can be cleared by the OS/browser. Keep a JSON backup in Drive, iCloud, or OneDrive.</p>
     </div>
     <div class="section-title">Backup</div>
     <button class="action-btn accent-btn" onclick="exportBackup()">
@@ -182,38 +183,68 @@
       <div class="theme-switcher settings-themes">
         <button class="theme-dot active" data-t="slate" onclick="setTheme('slate')" title="Slate"></button>
         <button class="theme-dot" data-t="pearl" onclick="setTheme('pearl')" title="Pearl"></button>
-        <button class="theme-dot" data-t="pink" onclick="setTheme('pink')" title="Baby pink"></button>
-        <button class="theme-dot" data-t="sage" onclick="setTheme('sage')" title="Sage"></button>
+        <button class="theme-dot" data-t="pink" onclick="setTheme('pink')" title="Modern pink"></button>
+        <button class="theme-dot" data-t="midnight" onclick="setTheme('midnight')" title="Midnight"></button>
       </div>
     </div>
     <div class="settings-block">
-      <div class="section-title">Preferences</div>
-      <label class="toggle-row"><span>Show decimals in amounts</span><input type="checkbox" id="setting-decimals"
-          onchange="saveSettings()" /></label>
-      <label class="toggle-row"><span>Ask/save backup after saving</span><input type="checkbox" id="setting-autobackup"
-          onchange="saveSettings()" /></label>
+      <div class="section-title">Display</div>
+      <div class="font-size-control" aria-label="Font size">
+        <button class="mini-btn secondary" onclick="changeFontSize(-1)">A-</button>
+        <div class="font-size-value" id="font-size-label">Normal</div>
+        <button class="mini-btn secondary" onclick="changeFontSize(1)">A+</button>
+      </div>
+    </div>
+    <div class="settings-block">
+      <div class="section-title">Cloud account</div>
+      <div class="auth-panel" id="auth-panel">
+        <div class="auth-status" id="auth-status">Cloud sync not configured</div>
+        <div class="auth-form" id="auth-form">
+          <input type="email" id="auth-email" placeholder="Email" autocomplete="email" />
+          <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password" />
+          <div class="auth-actions">
+            <button class="mini-btn" onclick="loginWithEmail()">Login</button>
+          </div>
+        </div>
+        <div class="auth-signed-in" id="auth-signed-in" hidden>
+          <div class="profile-card">
+            <div class="profile-greeting" id="profile-greeting">Hey!</div>
+            <div class="profile-meta" id="profile-meta"></div>
+          </div>
+          <button class="action-btn" onclick="syncNow()"><span class="aicon ai-import"></span>
+            <div class="btn-text">Sync now<div class="btn-sub" id="cloud-sync-status">Cloud sync ready</div></div>
+          </button>
+          <div class="password-form">
+            <input type="password" id="new-password" placeholder="New password" autocomplete="new-password" />
+            <input type="password" id="confirm-password" placeholder="Confirm password" autocomplete="new-password" />
+            <button class="mini-btn" onclick="changePassword()">Change password</button>
+          </div>
+          <button class="action-btn danger-btn" onclick="logoutCloud()"><span class="aicon ai-trash"></span>
+            <div class="btn-text">Logout<div class="btn-sub">Local records stay on this device</div></div>
+          </button>
+        </div>
+      </div>
     </div>
     <div class="settings-block">
       <div class="section-title">App & backup safety</div>
       <button class="action-btn" id="install-app-btn" onclick="installApp()"><span class="aicon ai-save"></span>
         <div class="btn-text">Install app<div class="btn-sub">Adds this tracker to your home screen where supported</div></div>
       </button>
-      <button class="action-btn accent-btn" onclick="connectBackupFile()"><span class="aicon ai-save"></span>
-        <div class="btn-text">Connect backup file<div class="btn-sub" id="cloud-sync-status">Client-only sync, no keys or secrets</div></div>
-      </button>
-      <button class="action-btn" onclick="writeConnectedBackup()"><span class="aicon ai-import"></span>
-        <div class="btn-text">Save to connected file<div class="btn-sub">Writes the latest JSON backup when permission is available</div></div>
-      </button>
-      <div class="backup-note">Works best on desktop Chromium browsers. On iPhone/Android, use Save backup and store the file in iCloud Drive, Google Drive, or OneDrive.</div>
     </div>
     <div class="settings-block">
-      <div class="section-title">Expense categories</div>
-      <div class="category-manager" id="category-manager"></div>
-      <div class="category-add-row"><input type="text" id="new-category" placeholder="New category name"
-          maxlength="24" /><button class="mini-btn" onclick="addCategory()">Add</button></div>
-      <button class="action-btn" onclick="resetCategories()"><span class="aicon ai-reset"></span>
-        <div class="btn-text">Reset categories<div class="btn-sub">Restore default master data</div>
+      <div class="section-title">Description shortcuts</div>
+      <div class="shortcut-editor">
+        <div class="select-wrap">
+          <select id="shortcut-category" onchange="renderShortcutManager()"></select>
         </div>
+        <div class="shortcut-add-row">
+          <input type="text" id="new-shortcut" placeholder="New shortcut" maxlength="32" />
+          <button class="mini-btn" onclick="addDescriptionShortcut()">Add</button>
+        </div>
+      </div>
+      <div class="shortcut-manager" id="shortcut-manager"></div>
+      <button class="action-btn" onclick="resetDescriptionShortcuts()"><span class="aicon ai-reset"></span>
+        <div class="btn-text">Reset shortcuts<div class="btn-sub">Restore default description buttons</div></div>
       </button>
     </div>
   </div>
@@ -232,6 +263,9 @@
   </div>
   <div class="toast" id="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-sync.js"></script>
   <script src="app.js"></script>
 </body>
 
