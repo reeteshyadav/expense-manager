@@ -1120,7 +1120,7 @@ function renderAuthUI() {
   const session = window.cloudSync?.getSession?.();
   const profile = window.cloudSync?.getProfile?.();
   const configured = window.cloudSync?.isConfigured?.();
-  form.style.display = Boolean(session) || !configured ? "grid" : "none";
+  // form.style.display = Boolean(session) ? "block" : "none";
   signedIn.hidden = !session;
   if (!configured) {
     status.textContent = "Cloud sync not configured";
