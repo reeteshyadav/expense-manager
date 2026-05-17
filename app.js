@@ -1122,10 +1122,14 @@ function renderAuthUI() {
   const configured = window.cloudSync?.isConfigured?.();
   form.hidden = Boolean(session) || !configured;
   signedIn.hidden = !session;
-  if (!configured) status.textContent = "Cloud sync not configured";
-  else if (session?.user?.email)
+  if (!configured) {
+    status.textContent = "Cloud sync not configured";
+  } else if (session?.user?.email) {
     status.textContent = `Signed in as ${session.user.email}`;
-  else status.textContent = "Sign in with an approved account";
+    form.hidden = true;
+  } else {
+    status.textContent = "Sign in with an approved account";
+  }
   if (greeting)
     greeting.textContent = profile?.full_name
       ? `Hey ${profile.full_name}!`
@@ -1134,6 +1138,9 @@ function renderAuthUI() {
     meta.textContent = profile?.phone
       ? `${session?.user?.email || profile.email} · ${profile.phone}`
       : session?.user?.email || "";
+
+  document.getElementById("auth-email").value = null;
+  document.getElementById("auth-password").value = null;
 }
 async function authCredentials() {
   const email = document.getElementById("auth-email")?.value.trim();
