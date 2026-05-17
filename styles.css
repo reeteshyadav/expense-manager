@@ -1251,7 +1251,6 @@ button.theme-dot {
   line-height: 1.4;
 }
 .auth-form {
-  display: grid;
   gap: 8px;
 }
 .auth-actions {

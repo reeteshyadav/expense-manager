@@ -1120,13 +1120,13 @@ function renderAuthUI() {
   const session = window.cloudSync?.getSession?.();
   const profile = window.cloudSync?.getProfile?.();
   const configured = window.cloudSync?.isConfigured?.();
-  form.hidden = Boolean(session) || !configured;
+  form.style.display = Boolean(session) || !configured ? "grid" : "none";
   signedIn.hidden = !session;
   if (!configured) {
     status.textContent = "Cloud sync not configured";
   } else if (session?.user?.email) {
     status.textContent = `Signed in as ${session.user.email}`;
-    form.hidden = true;
+    form.style.display = "none";
   } else {
     status.textContent = "Sign in with an approved account";
   }
