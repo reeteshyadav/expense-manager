@@ -30,7 +30,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=7" />
+    <link rel="stylesheet" href="styles.css?v=9" />
   </head>
 
   <body>
@@ -313,7 +313,11 @@
               <div class="profile-greeting" id="profile-greeting">Hey!</div>
               <div class="profile-meta" id="profile-meta"></div>
             </div>
-            <button class="action-btn" onclick="syncNow()">
+            <button
+              class="action-btn sync-btn"
+              id="sync-now-btn"
+              onclick="syncNow()"
+            >
               <span class="aicon ai-import"></span>
               <div class="btn-text">
                 Sync now
@@ -322,7 +326,22 @@
                 </div>
               </div>
             </button>
-            <div class="password-form">
+            <button class="action-btn danger-btn" onclick="logoutCloud()">
+              <span class="aicon ai-trash"></span>
+              <div class="btn-text">
+                Logout
+                <div class="btn-sub">Local records stay on this device</div>
+              </div>
+            </button>
+            <button
+              class="action-btn secondary"
+              id="show-password-btn"
+              onclick="togglePasswordForm()"
+            >
+              <span class="aicon ai-lock"></span>
+              <div class="btn-text">Change password</div>
+            </button>
+            <div class="password-form" id="password-form" hidden>
               <input
                 type="password"
                 id="new-password"
@@ -336,16 +355,9 @@
                 autocomplete="new-password"
               />
               <button class="mini-btn" onclick="changePassword()">
-                Change password
+                Change
               </button>
             </div>
-            <button class="action-btn danger-btn" onclick="logoutCloud()">
-              <span class="aicon ai-trash"></span>
-              <div class="btn-text">
-                Logout
-                <div class="btn-sub">Local records stay on this device</div>
-              </div>
-            </button>
           </div>
         </div>
       </div>
@@ -421,6 +433,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js?v=7"></script>
     <script src="supabase-sync.js?v=9"></script>
-    <script src="app.js?v=9"></script>
+    <script src="app.js?v=10"></script>
   </body>
 </html>

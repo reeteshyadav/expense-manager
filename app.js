@@ -84,6 +84,18 @@ function updateCloudSyncStatus(text) {
 }
 
 let deferredInstallPrompt = null;
+
+function getInstallInstructions() {
+  const ua = navigator.userAgent.toLowerCase();
+  if (/iphone|ipad|ipod/.test(ua)) {
+    return "Tap the browser Share button and choose 'Add to Home Screen'.";
+  }
+  if (/android/.test(ua)) {
+    return "Open the browser menu and choose 'Add to Home Screen'.";
+  }
+  return "Use the browser menu to install/add to home screen.";
+}
+
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredInstallPrompt = e;
@@ -93,7 +105,7 @@ window.addEventListener("beforeinstallprompt", (e) => {
 
 async function installApp() {
   if (!deferredInstallPrompt) {
-    showToast("Use browser menu to install/add to home screen", true);
+    showToast(getInstallInstructions(), true);
     return;
   }
   deferredInstallPrompt.prompt();
@@ -1127,6 +1139,8 @@ function renderAuthUI() {
   const status = document.getElementById("auth-status");
   const greeting = document.getElementById("profile-greeting");
   const meta = document.getElementById("profile-meta");
+  const showPwdBtn = document.getElementById("show-password-btn");
+  const pwdForm = document.getElementById("password-form");
   if (!form || !signedIn || !status) return;
   const session = window.cloudSync?.getSession?.();
   const profile = window.cloudSync?.getProfile?.();
@@ -1152,6 +1166,8 @@ function renderAuthUI() {
 
   document.getElementById("auth-email").value = null;
   document.getElementById("auth-password").value = null;
+  if (pwdForm) pwdForm.hidden = true;
+  if (showPwdBtn) showPwdBtn.hidden = !session;
 }
 async function authCredentials() {
   const email = document.getElementById("auth-email")?.value.trim();
@@ -1183,8 +1199,40 @@ async function changePassword() {
     document.getElementById("new-password").value = "";
     document.getElementById("confirm-password").value = "";
     showToast("Password changed");
+    const pwdForm = document.getElementById("password-form");
+    const showPwdBtn = document.getElementById("show-password-btn");
+    if (pwdForm) pwdForm.hidden = true;
+    if (showPwdBtn) {
+      const btnText = showPwdBtn.querySelector(".btn-text");
+      if (btnText) btnText.textContent = "Change password";
+      else showPwdBtn.textContent = "Change password";
+    }
   } catch (error) {
     showToast(error.message || "Password change failed", true);
+  }
+}
+
+function togglePasswordForm() {
+  const pwdForm = document.getElementById("password-form");
+  const showPwdBtn = document.getElementById("show-password-btn");
+  if (!pwdForm || !showPwdBtn) return;
+  const isHidden = pwdForm.hidden;
+  pwdForm.hidden = !isHidden;
+  const btnText = showPwdBtn.querySelector(".btn-text");
+  if (btnText) {
+    btnText.textContent = isHidden ? "Cancel" : "Change password";
+  } else {
+    showPwdBtn.textContent = isHidden ? "Cancel" : "Change password";
+  }
+  if (!pwdForm.hidden) {
+    const first = document.getElementById("new-password");
+    if (first) first.focus();
+  } else {
+    // clear fields when hiding
+    const np = document.getElementById("new-password");
+    const cp = document.getElementById("confirm-password");
+    if (np) np.value = "";
+    if (cp) cp.value = "";
   }
 }
 async function logoutCloud() {
