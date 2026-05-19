@@ -754,6 +754,10 @@ async function initCloudSync() {
     onSessionChange: renderAuthUI,
   });
 
+  if (navigator.onLine) {
+    await window.cloudSync.syncNow("startup");
+  }
+
   setInterval(() => {
     if (document.visibilityState === "visible" && navigator.onLine) {
       window.cloudSync?.syncNow("interval");
@@ -893,7 +897,8 @@ async function saveExpense() {
   renderDescriptionShortcuts();
   fp && fp.setDate(dateStr, false);
   await refreshViews();
-  window.cloudSync?.queueSync("save");
+  // window.cloudSync?.queueSync("save");
+  await window.cloudSync?.syncNow("save");
 }
 function showConfirm({ title, message, actionText }) {
   return new Promise((resolve) => {
