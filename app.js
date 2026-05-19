@@ -753,6 +753,12 @@ async function initCloudSync() {
     onStatus: updateCloudSyncStatus,
     onSessionChange: renderAuthUI,
   });
+
+  setInterval(() => {
+    if (document.visibilityState === "visible" && navigator.onLine) {
+      window.cloudSync?.syncNow("interval");
+    }
+  }, 15000);
 }
 function initFlatpickr() {
   fp = flatpickr("#f-date", {
